@@ -2,6 +2,7 @@ const userModel = require("../model/user.model");
 const bcrypt = require("bcrypt");
 const jwtToken = require("../helper/generateJWT");
 const { success, failed, successWithToken } = require("../helper/file.respons");
+const cloudinary = require("../helper/cloudinary");
 
 const userController = {
 	list: (req, res) => {
@@ -28,21 +29,24 @@ const userController = {
 
 	register: (req, res) => {
 		try {
-			// tangkap data dari body
-			// const profile_pic = req.file.filename;
-			// const id = uuidv4();
 			const { fullname, username, email, password } = req.body;
-			bcrypt.hash(password, 10, (err, hash) => {
+			bcrypt.hash(password, 10, async (err, hash) => {
 				if (err) {
 					failed(res, err.message, "failed", "fail hash password");
 				}
+				const profile_pic = req.file
+					? await cloudinary.uploader.upload(req.file.path)
+					: {
+							secure_url:
+								"https://res.cloudinary.com/dhm4yjouq/image/upload/v1667923907/cld-sample.jpg",
+					  };
 
 				const data = {
 					fullname,
 					username,
 					email,
 					password: hash,
-					profile_pic: "avatar.png",
+					profile_pic: `${profile_pic.secure_url}`,
 				};
 
 				userModel.checkEmail(email).then((result) => {
@@ -129,12 +133,14 @@ const userController = {
 			});
 	},
 
-	updateImage: (req, res) => {
+	updateImage: async (req, res) => {
 		const id = req.params.id;
-		const profile_pic = req.file.filename;
-		// const profile_pic = await cloudinary.uploader.upload(req.file.path);
+		const images = await cloudinary.uploader.upload(req.file.path);
+		const data = {
+			profile_pic: `${images.secure_url}`,
+		};
 		userModel
-			.updateImage(id, profile_pic)
+			.updateImage(id, data.profile_pic)
 			.then((results) => {
 				res.json(results);
 			})

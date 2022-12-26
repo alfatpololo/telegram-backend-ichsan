@@ -9,7 +9,6 @@ const {
 	updateImage,
 	destroy,
 } = require("../controller/user.controller");
-const deleteFile = require("../middleware/deleteUser");
 const uploadFile = require("../middleware/uploadUser");
 
 const userRouter = express.Router();
